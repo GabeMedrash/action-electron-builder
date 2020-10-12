@@ -1,5 +1,5 @@
 const { execSync } = require("child_process");
-const { existsSync, readFileSync } = require("fs");
+const { existsSync } = require("fs");
 const { join } = require("path");
 
 /**
@@ -138,11 +138,6 @@ const runAction = () => {
 	const appRoot = getInput("app_root") || pkgRoot;
 
 	const pkgJsonPath = join(pkgRoot, "package.json");
-	const pkgLockPath = join(pkgRoot, "package-lock.json");
-
-	// Determine whether NPM should be used to run commands (instead of Yarn, which is the default)
-	const useNpm = existsSync(pkgLockPath);
-	log(`Will run ${useNpm ? "NPM" : "Yarn"} commands in directory "${pkgRoot}"`);
 
 	// Make sure `package.json` file exists
 	if (!existsSync(pkgJsonPath)) {
@@ -165,25 +160,16 @@ const runAction = () => {
 	// Disable console advertisements during install phase
 	setEnv("ADBLOCK", true);
 
-	log(`Installing dependencies using ${useNpm ? "NPM" : "Yarn"}…`);
-	run(useNpm ? "npm install" : "yarn", pkgRoot);
+	log("Installing dependencies using NPM");
+	run("npm ci");
+	run("npx lerna bootstrap --hoist");
 
 	// Run NPM build script if it exists
-	log("Running the build script…");
-	if (useNpm) {
-		run("npm run build --if-present", pkgRoot);
-	} else {
-		// TODO: Use `yarn run build --if-present` once supported
-		// https://github.com/yarnpkg/yarn/issues/6894
-		const pkgJson = JSON.parse(readFileSync(pkgJsonPath, "utf8"));
-		if (pkgJson.scripts && pkgJson.scripts.build) {
-			run("yarn build", pkgRoot);
-		}
-	}
+	run("npm run build --if-present", pkgRoot);
 
 	log(`Building${release ? " and releasing" : ""} the Electron app…`);
 
-	const runner = useNpm ? "npx --no-install" : "yarn run";
+	const runner = "npx --no-install";
 	const executable = "electron-builder";
 	const platformArg = `--${platform}`;
 	const releaseArg = release ? "--publish always" : "";
