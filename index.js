@@ -172,7 +172,7 @@ const runAction = () => {
 	const runner = "npx --no-install";
 	const executable = "electron-builder";
 	const platformArg = `--${platform}`;
-	const releaseArg = release ? "--publish always" : "";
+	const releaseArg = release ? "--publish always" : "--publish never";
 	const configOverrideArgs = transformConfigOverridesToCliArgs(configOverrides);
 
 	const script = [runner, executable, platformArg, releaseArg, ...configOverrideArgs].join(" ");
